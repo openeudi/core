@@ -1,0 +1,76 @@
+{
+  "name": "@openeudi/core",
+  "version": "0.1.0",
+  "description": "Framework-agnostic EUDI Wallet verification protocol engine",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./qr": {
+      "import": {
+        "types": "./dist/qr.d.ts",
+        "default": "./dist/qr.js"
+      },
+      "require": {
+        "types": "./dist/qr.d.cts",
+        "default": "./dist/qr.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0"
+  },
+  "peerDependencies": {
+    "qrcode": "^1.5.0"
+  },
+  "peerDependenciesMeta": {
+    "qrcode": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "qrcode": "^1.5.4",
+    "@types/qrcode": "^1.5.5",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.8.3",
+    "tsup": "^8.5.1",
+    "vitest": "^4.0.18"
+  },
+  "keywords": [
+    "eudi",
+    "eidas",
+    "verification",
+    "identity",
+    "wallet",
+    "openid4vp",
+    "age-verification"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openeudi/core"
+  }
+}
