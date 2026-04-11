@@ -1,4 +1,4 @@
-import type { VerificationSession, VerificationResult, CreateSessionInput } from '../types/session.js';
+import type { BaseSession, VerificationResult, CreateSessionInput } from '../types/session.js';
 
 /**
  * Strategy interface for verification modes.
@@ -12,11 +12,11 @@ export interface IVerificationMode {
      * Process a callback from a wallet (or simulated callback).
      * Called when the wallet sends credential data back.
      *
-     * @param session - The current verification session
+     * @param session - The current verification session (any state)
      * @param walletResponse - Raw data from the wallet (format depends on mode)
      * @returns Verification result
      */
-    processCallback(session: VerificationSession, walletResponse: unknown): Promise<VerificationResult>;
+    processCallback(session: BaseSession, walletResponse: unknown): Promise<VerificationResult>;
 
     /**
      * Optional: simulate automatic completion (used by DemoMode).
@@ -26,7 +26,7 @@ export interface IVerificationMode {
      * @param session - The session to auto-complete
      * @returns Verification result after simulated delay
      */
-    simulateCompletion?(session: VerificationSession): Promise<VerificationResult>;
+    simulateCompletion?(session: BaseSession): Promise<VerificationResult>;
 
     /**
      * Optional: build a custom wallet URL for the session.

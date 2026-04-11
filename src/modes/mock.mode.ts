@@ -1,4 +1,4 @@
-import type { VerificationSession, VerificationResult } from '../types/session.js';
+import type { BaseSession, VerificationResult } from '../types/session.js';
 
 import type { IVerificationMode } from './mode.interface.js';
 
@@ -17,7 +17,7 @@ const DEFAULT_RESULT: VerificationResult = {
 };
 
 /**
- * Mock mode — configurable responses for integration testing.
+ * Mock mode -- configurable responses for integration testing.
  * Supports global defaults and per-session overrides.
  */
 export class MockMode implements IVerificationMode {
@@ -41,14 +41,14 @@ export class MockMode implements IVerificationMode {
         this.sessionOverrides.delete(sessionId);
     }
 
-    async processCallback(session: VerificationSession, _walletResponse: unknown): Promise<VerificationResult> {
+    async processCallback(session: BaseSession, _walletResponse: unknown): Promise<VerificationResult> {
         if (this.delayMs > 0) {
             await new Promise((resolve) => setTimeout(resolve, this.delayMs));
         }
         return this.sessionOverrides.get(session.id) ?? { ...this.defaultResult };
     }
 
-    async simulateCompletion(session: VerificationSession): Promise<VerificationResult> {
+    async simulateCompletion(session: BaseSession): Promise<VerificationResult> {
         return this.processCallback(session, {});
     }
 }

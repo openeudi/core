@@ -1,4 +1,4 @@
-// @openeudi/core — EUDI Wallet verification protocol engine
+// @openeudi/core -- EUDI Wallet verification protocol engine
 export const VERSION = '0.1.0';
 
 // Types
@@ -9,10 +9,23 @@ export type {
     VerificationResult,
     CreateSessionInput,
     VerificationServiceConfig,
+    BaseSession,
+    PendingSession,
+    CompletedSession,
+    ExpiredSession,
+    VerificationEvents,
 } from './types/index.js';
 
 // Errors
-export { SessionNotFoundError, SessionExpiredError } from './errors.js';
+export {
+    SessionNotFoundError,
+    SessionExpiredError,
+    SessionNotPendingError,
+    ServiceDestroyedError,
+} from './errors.js';
+
+// Validation
+export { validateConfig, validateSessionInput, isValidCountryCode } from './validation.js';
 
 // Storage
 export type { ISessionStore } from './storage/store.interface.js';

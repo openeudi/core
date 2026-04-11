@@ -1,4 +1,4 @@
-import type { VerificationSession, VerificationResult } from '../types/session.js';
+import type { BaseSession, VerificationResult } from '../types/session.js';
 import { VerificationType } from '../types/verification.js';
 
 import type { IVerificationMode } from './mode.interface.js';
@@ -39,7 +39,7 @@ export interface DemoModeConfig {
 }
 
 /**
- * Demo mode — auto-completes verification with randomized EU data.
+ * Demo mode -- auto-completes verification with randomized EU data.
  * Used for product demos and landing page previews.
  */
 export class DemoMode implements IVerificationMode {
@@ -50,12 +50,12 @@ export class DemoMode implements IVerificationMode {
         this.delayMs = config.delayMs ?? 3000;
     }
 
-    async processCallback(session: VerificationSession, _walletResponse: unknown): Promise<VerificationResult> {
+    async processCallback(session: BaseSession, _walletResponse: unknown): Promise<VerificationResult> {
         const country = this.pickCountry(session.countryWhitelist);
         return this.buildResult(session.type, country);
     }
 
-    async simulateCompletion(session: VerificationSession): Promise<VerificationResult> {
+    async simulateCompletion(session: BaseSession): Promise<VerificationResult> {
         await new Promise((resolve) => setTimeout(resolve, this.delayMs));
         return this.processCallback(session, {});
     }
