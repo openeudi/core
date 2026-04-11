@@ -6,7 +6,7 @@
     "name": "Akos Foldesi",
     "email": "flds.akos@gmail.com",
     "phone": "",
-    "description": "Creator and sole maintainer of OpenEUDI — the open-source EUDI Wallet verification toolkit for TypeScript.",
+    "description": "Creator and sole maintainer of OpenEUDI, the open-source EUDI Wallet verification toolkit for TypeScript.",
     "webpageUrl": {
       "url": "https://github.com/openeudi"
     }
@@ -15,7 +15,7 @@
     {
       "guid": "openeudi-core",
       "name": "@openeudi/core",
-      "description": "Framework-agnostic EUDI Wallet verification protocol engine. Session management, pluggable storage, DemoMode/MockMode/ProductionMode strategies, EventEmitter architecture. The foundational library for EU digital identity verification in JavaScript/TypeScript.",
+      "description": "Framework-agnostic EUDI Wallet verification protocol engine. Session management, pluggable storage, strategy-pattern operating modes, EventEmitter architecture. The foundational library for EU digital identity verification in JavaScript and TypeScript.",
       "webpageUrl": {
         "url": "https://github.com/openeudi/core"
       },
@@ -28,7 +28,7 @@
     {
       "guid": "openeudi-openid4vp",
       "name": "@openeudi/openid4vp",
-      "description": "OpenID4VP credential parsing and validation for EUDI Wallets. Supports SD-JWT VC (RFC 9449) and mDOC/mDL (ISO 18013-5) credential formats with certificate trust verification, nonce validation, and privacy-preserving claim extraction.",
+      "description": "OpenID4VP credential parsing and validation for EUDI Wallets. Supports SD-JWT VC and mDOC/mDL credential formats with certificate trust verification, nonce validation, and privacy-preserving claim extraction.",
       "webpageUrl": {
         "url": "https://github.com/openeudi/openid4vp"
       },
@@ -52,8 +52,8 @@
       {
         "guid": "maintenance",
         "status": "active",
-        "name": "SDK Maintenance & Security",
-        "description": "Ongoing maintenance of the OpenEUDI verification toolkit: OpenID4VP spec tracking, security patches, dependency updates, EU Trusted List synchronization, and community issue triage.",
+        "name": "SDK Maintenance and Security",
+        "description": "Ongoing maintenance of the OpenEUDI verification toolkit including OpenID4VP spec tracking, security patches, dependency updates, EU Trusted List synchronization, and community issue triage.",
         "amount": 50000,
         "currency": "USD",
         "frequency": "yearly",
@@ -63,7 +63,7 @@
         "guid": "ecosystem",
         "status": "active",
         "name": "Ecosystem Development",
-        "description": "Build e-commerce plugins (WooCommerce, Shopify), EU Trusted List certificate chain validation, 27-country compliance mapping, reference verification server, and developer documentation.",
+        "description": "Build e-commerce plugins for WooCommerce and Shopify, EU Trusted List certificate chain validation, 27-country compliance mapping, reference verification server, and developer documentation.",
         "amount": 100000,
         "currency": "USD",
         "frequency": "one-time",
