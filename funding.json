@@ -1,0 +1,72 @@
+{
+  "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+  "version": "v1.1.0",
+  "entity": {
+    "type": "individual",
+    "role": "owner",
+    "name": "Akos Foldesi",
+    "email": "flds.akos@gmail.com",
+    "description": "Creator and sole maintainer of OpenEUDI — the open-source EUDI Wallet verification toolkit for TypeScript.",
+    "webpageUrl": {
+      "url": "https://github.com/openeudi"
+    }
+  },
+  "projects": [
+    {
+      "guid": "openeudi-core",
+      "name": "@openeudi/core",
+      "description": "Framework-agnostic EUDI Wallet verification protocol engine. Session management, pluggable storage, DemoMode/MockMode/ProductionMode strategies, EventEmitter architecture. The foundational library for EU digital identity verification in JavaScript/TypeScript.",
+      "webpageUrl": {
+        "url": "https://github.com/openeudi/core"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/openeudi/core"
+      },
+      "licenses": ["spdx:Apache-2.0"],
+      "tags": ["eudi", "eidas", "identity", "verification", "openid4vp", "typescript", "eu-digital-identity"]
+    },
+    {
+      "guid": "openeudi-openid4vp",
+      "name": "@openeudi/openid4vp",
+      "description": "OpenID4VP credential parsing and validation for EUDI Wallets. Supports SD-JWT VC (RFC 9449) and mDOC/mDL (ISO 18013-5) credential formats with certificate trust verification, nonce validation, and privacy-preserving claim extraction.",
+      "webpageUrl": {
+        "url": "https://github.com/openeudi/openid4vp"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/openeudi/openid4vp"
+      },
+      "licenses": ["spdx:Apache-2.0"],
+      "tags": ["openid4vp", "sd-jwt", "mdoc", "verifiable-credentials", "eidas", "typescript"]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "github-sponsors",
+        "type": "payment-processor",
+        "address": "https://github.com/sponsors/openeudi",
+        "description": "GitHub Sponsors"
+      }
+    ],
+    "plans": [
+      {
+        "guid": "maintenance",
+        "name": "SDK Maintenance & Security",
+        "description": "Ongoing maintenance of the OpenEUDI verification toolkit: OpenID4VP spec tracking, security patches, dependency updates, EU Trusted List synchronization, and community issue triage. Solo maintainer needs sustainability funding to ensure this critical EU digital identity infrastructure remains secure and up-to-date.",
+        "amount": 50000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": ["github-sponsors"]
+      },
+      {
+        "guid": "ecosystem",
+        "name": "Ecosystem Development",
+        "description": "Build e-commerce plugins (WooCommerce, Shopify), EU Trusted List certificate chain validation (WRPAC/ETSI TS 119 475), 27-country compliance mapping, reference verification server, and developer documentation. Enables 450M EU citizens to verify identity at online merchants using open-source infrastructure.",
+        "amount": 100000,
+        "currency": "USD",
+        "frequency": "one-time",
+        "channels": ["github-sponsors"]
+      }
+    ]
+  }
+}
