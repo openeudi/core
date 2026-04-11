@@ -1,14 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
 import { MockMode } from '../src/modes/mock.mode.js';
-import type { VerificationSession, VerificationResult } from '../src/types/session.js';
-import { VerificationType, VerificationStatus } from '../src/types/verification.js';
+import type { BaseSession, VerificationResult } from '../src/types/session.js';
+import { VerificationType } from '../src/types/verification.js';
 
-function createTestSession(overrides: Partial<VerificationSession> = {}): VerificationSession {
+function createTestSession(overrides: Partial<BaseSession> = {}): BaseSession {
     return {
         id: crypto.randomUUID(),
         type: VerificationType.AGE,
-        status: VerificationStatus.PENDING,
         walletUrl: 'openid4vp://verify?session=test',
         createdAt: new Date(),
         expiresAt: new Date(Date.now() + 300_000),

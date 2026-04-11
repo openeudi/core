@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { InMemorySessionStore } from '../src/storage/memory.store.js';
-import type { VerificationSession } from '../src/types/session.js';
+import type { PendingSession } from '../src/types/session.js';
 import { VerificationType, VerificationStatus } from '../src/types/verification.js';
 
-function createTestSession(overrides: Partial<VerificationSession> = {}): VerificationSession {
+function createTestSession(overrides: Partial<PendingSession> = {}): PendingSession {
     return {
         id: crypto.randomUUID(),
         type: VerificationType.AGE,
@@ -38,7 +38,7 @@ describe('InMemorySessionStore', () => {
     it('overwrites existing session on set', async () => {
         const session = createTestSession();
         await store.set(session);
-        const updated = { ...session, status: VerificationStatus.VERIFIED };
+        const updated = { ...session, status: VerificationStatus.VERIFIED as const, result: { verified: true }, completedAt: new Date() };
         await store.set(updated);
         const result = await store.get(session.id);
         expect(result?.status).toBe(VerificationStatus.VERIFIED);

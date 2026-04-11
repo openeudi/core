@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { DemoMode } from '../src/modes/demo.mode.js';
-import type { VerificationSession } from '../src/types/session.js';
+import type { BaseSession } from '../src/types/session.js';
 import { VerificationType, VerificationStatus } from '../src/types/verification.js';
 
 const EU_COUNTRIES = [
@@ -34,11 +34,10 @@ const EU_COUNTRIES = [
     'SE',
 ];
 
-function createTestSession(overrides: Partial<VerificationSession> = {}): VerificationSession {
+function createTestSession(overrides: Partial<BaseSession> = {}): BaseSession {
     return {
         id: crypto.randomUUID(),
         type: VerificationType.AGE,
-        status: VerificationStatus.PENDING,
         walletUrl: 'openid4vp://verify?session=test',
         createdAt: new Date(),
         expiresAt: new Date(Date.now() + 300_000),
