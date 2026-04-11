@@ -1,6 +1,7 @@
-import type { IVerificationMode } from './mode.interface.js';
 import type { VerificationSession, VerificationResult } from '../types/session.js';
 import { VerificationType } from '../types/verification.js';
+
+import type { IVerificationMode } from './mode.interface.js';
 
 const EU_COUNTRIES = [
     'AT',

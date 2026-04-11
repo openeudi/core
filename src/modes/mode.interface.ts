@@ -1,4 +1,4 @@
-import type { VerificationSession, VerificationResult } from '../types/session.js';
+import type { VerificationSession, VerificationResult, CreateSessionInput } from '../types/session.js';
 
 /**
  * Strategy interface for verification modes.
@@ -27,4 +27,15 @@ export interface IVerificationMode {
      * @returns Verification result after simulated delay
      */
     simulateCompletion?(session: VerificationSession): Promise<VerificationResult>;
+
+    /**
+     * Optional: build a custom wallet URL for the session.
+     * Used by ProductionMode to generate proper OpenID4VP authorization requests.
+     * If not implemented, the service uses a default URL format.
+     *
+     * @param sessionId - The session ID
+     * @param input - The session creation input
+     * @returns Custom wallet URL
+     */
+    buildWalletUrl?(sessionId: string, input: CreateSessionInput): Promise<string>;
 }

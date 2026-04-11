@@ -72,5 +72,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/openeudi/core"
-  }
+  },
+  "homepage": "https://github.com/openeudi/core#readme",
+  "bugs": {
+    "url": "https://github.com/openeudi/core/issues"
+  },
+  "author": "OpenEUDI Contributors"
 }

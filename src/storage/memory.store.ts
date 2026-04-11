@@ -1,4 +1,5 @@
 import type { VerificationSession } from '../types/session.js';
+
 import type { ISessionStore } from './store.interface.js';
 
 /**

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { InMemorySessionStore } from '../src/storage/memory.store.js';
-import { VerificationType, VerificationStatus } from '../src/types/verification.js';
 import type { VerificationSession } from '../src/types/session.js';
+import { VerificationType, VerificationStatus } from '../src/types/verification.js';
 
 function createTestSession(overrides: Partial<VerificationSession> = {}): VerificationSession {
     return {

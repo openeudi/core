@@ -11,6 +11,19 @@ export type {
     VerificationServiceConfig,
 } from './types/index.js';
 
+// Errors
+export { SessionNotFoundError, SessionExpiredError } from './errors.js';
+
 // Storage
 export type { ISessionStore } from './storage/store.interface.js';
 export { InMemorySessionStore } from './storage/memory.store.js';
+
+// Modes
+export type { IVerificationMode } from './modes/mode.interface.js';
+export { DemoMode } from './modes/demo.mode.js';
+export type { DemoModeConfig } from './modes/demo.mode.js';
+export { MockMode } from './modes/mock.mode.js';
+export type { MockModeConfig } from './modes/mock.mode.js';
+
+// Service
+export { VerificationService } from './verification.service.js';
