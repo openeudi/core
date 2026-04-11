@@ -43,7 +43,7 @@
     "channels": [
       {
         "guid": "github-sponsors",
-        "type": "payment-processor",
+        "type": "payment-provider",
         "address": "https://github.com/sponsors/openeudi",
         "description": "GitHub Sponsors"
       }
