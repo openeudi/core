@@ -1,11 +1,11 @@
 {
-  "$schema": "https://fundingjson.org/schema/v1.1.0.json",
-  "version": "v1.1.0",
+  "version": "v1.0.0",
   "entity": {
     "type": "individual",
     "role": "owner",
     "name": "Akos Foldesi",
     "email": "flds.akos@gmail.com",
+    "phone": "",
     "description": "Creator and sole maintainer of OpenEUDI — the open-source EUDI Wallet verification toolkit for TypeScript.",
     "webpageUrl": {
       "url": "https://github.com/openeudi"
@@ -45,14 +45,15 @@
         "guid": "github-sponsors",
         "type": "payment-provider",
         "address": "https://github.com/sponsors/openeudi",
-        "description": "GitHub Sponsors"
+        "description": "GitHub Sponsors for OpenEUDI"
       }
     ],
     "plans": [
       {
         "guid": "maintenance",
+        "status": "active",
         "name": "SDK Maintenance & Security",
-        "description": "Ongoing maintenance of the OpenEUDI verification toolkit: OpenID4VP spec tracking, security patches, dependency updates, EU Trusted List synchronization, and community issue triage. Solo maintainer needs sustainability funding to ensure this critical EU digital identity infrastructure remains secure and up-to-date.",
+        "description": "Ongoing maintenance of the OpenEUDI verification toolkit: OpenID4VP spec tracking, security patches, dependency updates, EU Trusted List synchronization, and community issue triage.",
         "amount": 50000,
         "currency": "USD",
         "frequency": "yearly",
@@ -60,13 +61,15 @@
       },
       {
         "guid": "ecosystem",
+        "status": "active",
         "name": "Ecosystem Development",
-        "description": "Build e-commerce plugins (WooCommerce, Shopify), EU Trusted List certificate chain validation (WRPAC/ETSI TS 119 475), 27-country compliance mapping, reference verification server, and developer documentation. Enables 450M EU citizens to verify identity at online merchants using open-source infrastructure.",
+        "description": "Build e-commerce plugins (WooCommerce, Shopify), EU Trusted List certificate chain validation, 27-country compliance mapping, reference verification server, and developer documentation.",
         "amount": 100000,
         "currency": "USD",
         "frequency": "one-time",
         "channels": ["github-sponsors"]
       }
-    ]
+    ],
+    "history": null
   }
 }
