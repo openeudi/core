@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-04-21
+
+### Changed
+
+- **Version sync** with `@openeudi/openid4vp@0.3.0`. No code or API changes in this package. Both packages are now versioned in lockstep starting 0.3.0; this release exists to keep dependents' consumption patterns aligned.
+
+[0.3.0]: https://github.com/openeudi/core/releases/tag/v0.3.0
+
 ## [0.2.0] - 2026-03-29
 
 ### Breaking Changes
