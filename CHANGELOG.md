@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] — 2026-04-21
+
+### Changed
+
+- **Version sync** with `@openeudi/openid4vp@0.4.0` (paired release). No API changes in `@openeudi/core` itself — this is a metadata-only bump to keep the two packages on parallel release cadences.
+
+[0.4.0]: https://github.com/openeudi/core/releases/tag/v0.4.0
+
 ## [0.3.0] — 2026-04-21
 
 ### Changed
