@@ -1,5 +1,5 @@
 // @openeudi/core -- EUDI Wallet verification protocol engine
-export const VERSION = '0.4.0';
+export const VERSION = '0.5.0';
 
 // Types
 export { VerificationType, VerificationStatus } from './types/index.js';
