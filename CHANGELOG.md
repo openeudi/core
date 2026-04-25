@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] — 2026-04-25
+
+### Changed
+
+- Paired version bump with `@openeudi/openid4vp@0.7.0` (synchronized-versioning rule). No API change in `@openeudi/core` this release — the openid4vp companion adds signed authorization requests (JAR / `x509_san_dns`), encrypted `direct_post.jwt` response handling, and the OpenID4VP 1.0 §8.1 envelope verifier; this bump keeps the two packages on parallel release cadences.
+
+[0.7.0]: https://github.com/openeudi/core/releases/tag/v0.7.0
+
+## [0.6.0] — 2026-04-24
+
+### Changed
+
+- Paired version bump with `@openeudi/openid4vp@0.6.0` (synchronized-versioning rule). No API change in `@openeudi/core` — the openid4vp companion surfaces dcql-native `value_mismatch` reasons after the dcql 0.2.0 upgrade.
+
+[0.6.0]: https://github.com/openeudi/core/releases/tag/v0.6.0
+
 ## [0.5.0] — 2026-04-23
 
 ### Changed
