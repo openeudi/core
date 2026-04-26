@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] — 2026-04-26
+
+### Changed
+
+- Paired version bump with `@openeudi/openid4vp@0.8.0` (synchronized-versioning rule). No API change in `@openeudi/core` this release — the openid4vp companion adds an ID3-compatibility `client_metadata` bridge in `createSignedAuthorizationRequest`, an opt-in `ParseOptions.trustedIssuerJwks` trust path for SD-JWT VCs without `x5c`, and a transitive SD-JWT disclosure-hash check (fix for false-rejection of PID-style VCs); this bump keeps the two packages on parallel release cadences.
+
+[0.8.0]: https://github.com/openeudi/core/releases/tag/v0.8.0
+
 ## [0.7.0] — 2026-04-25
 
 ### Changed
