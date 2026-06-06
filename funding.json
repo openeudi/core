@@ -37,6 +37,19 @@
       },
       "licenses": ["spdx:Apache-2.0"],
       "tags": ["openid4vp", "sd-jwt", "mdoc", "verifiable-credentials", "eidas", "typescript"]
+    },
+    {
+      "guid": "openeudi-dcql",
+      "name": "@openeudi/dcql",
+      "description": "Zero-dependency DCQL (Digital Credentials Query Language) validator and credential matcher for OpenID4VP 1.0. Matches presented credentials against query constraints with detailed, structured failure reasons.",
+      "webpageUrl": {
+        "url": "https://github.com/openeudi/dcql"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/openeudi/dcql"
+      },
+      "licenses": ["spdx:Apache-2.0"],
+      "tags": ["dcql", "openid4vp", "verifiable-credentials", "eidas", "typescript"]
     }
   ],
   "funding": {
