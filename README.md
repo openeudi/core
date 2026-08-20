@@ -381,3 +381,11 @@ service.on("error", (err, sessionId) => {
 ## Related
 
 [eIDAS Pro](https://eidas-pro.eu) -- managed verification service with WooCommerce/Shopify plugins, admin dashboard, and compliance tools built on `@openeudi/core`.
+
+## Community integrations
+
+Third-party projects built on this library. These are **not** maintained or audited by OpenEUDI -- evaluate them on their own merits.
+
+- **[eudi-verify](https://github.com/eudi-verify/eudi-verify)** -- Relying-party widget and API. Its `OpenEudiEngine` runs `@openeudi/core`'s `DemoMode` behind a swappable `VerifierEngine` interface for demo verification; production OpenID4VP flows use [`@openeudi/openid4vp`](https://github.com/openeudi/openid4vp). Demo: [demo.eudi-verify.eu](https://demo.eudi-verify.eu/).
+
+Built something on `@openeudi/core`? Open an issue and we're happy to consider listing it here.
