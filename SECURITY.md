@@ -4,10 +4,15 @@
 
 | Version | Supported |
 | ------- | --------- |
-| 0.2.x   | Yes       |
-| < 0.2   | No        |
+| 0.8.x   | Yes       |
+| < 0.8   | No        |
 
-Only the latest release receives security updates.
+Only the latest minor receives security updates. While this package is pre-1.0
+there are no maintained backport branches: a fix ships in the next release from
+`main`, so staying current is a prerequisite for being covered by this policy.
+
+No security advisories have been published for `@openeudi/core` to date, and the
+package has not had an independent third-party security audit.
 
 ## Reporting a Vulnerability
 
