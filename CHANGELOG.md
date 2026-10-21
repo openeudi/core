@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+
+- `handleCallback` now processes a session only while it is `PENDING`
+  ([GHSA-3qfw-p66v-5p5f](https://github.com/openeudi/core/security/advisories/GHSA-3qfw-p66v-5p5f)).
+  A second or concurrent callback could previously overwrite a completed session, for
+  example turning `REJECTED` into `VERIFIED`, and re-emit its events.
+
+### Changed
+
+- **`handleCallback` accepts one callback per session.** Only a `PENDING` session is processed. A callback for a session that is already `VERIFIED` or `REJECTED`, or one that arrives while another callback for the same session is being processed, now throws `SessionNotPendingError` and emits no event. Before, a later callback re-ran `processCallback`, overwrote the stored result (a `REJECTED` session could become `VERIFIED`) and emitted `session:verified` / `session:rejected` again. If `processCallback` throws, the session stays `PENDING` as before, so the wallet can retry.
+- The session is claimed before the mode processes the response. With a store that implements the new `ISessionStore.compareAndSet`, the claim and the final state change are atomic across every process that shares the store. Stores without it keep working: the service then serialises callbacks per session inside one process (an in-process lock plus a status re-check), but two service instances sharing such a store are not coordinated.
+- `cancelSession` refuses a session whose callback is being processed (`SessionNotPendingError`), and `cleanupExpired` skips it, so neither can undo a callback that is already running.
+- DemoMode's simulated completion goes through the same claim, and no longer completes a session whose TTL has already elapsed.
+- `cleanupExpired` also sweeps the IDs returned by the new optional `ISessionStore.listExpired(now)`, so sessions created by other instances or before a restart can be expired. With `compareAndSet`, the `PENDING` to `EXPIRED` change is atomic.
+- `ISessionStore.get` is typed to return `StoredSession` (`VerificationSession | ProcessingSession`). Existing stores that return `VerificationSession` still type-check.
+- Node.js 22 or later is required (`engines.node >= 22`); Node 20 reached end of life on 2026-04-30. CI now tests on Node 22 and 24.
+
+### Added
+
+- `ISessionStore.compareAndSet?(id, expectedStatus, next)` and `ISessionStore.listExpired?(now)`, both optional and both implemented by `InMemorySessionStore`.
+- `PROCESSING_STATUS` (`'PROCESSING'`) and the `ProcessingSession`, `StoredSession` and `StoredSessionStatus` types. `PROCESSING` is a storage-only marker, written only through `compareAndSet`. It is not a `VerificationStatus` member, so exhaustive `switch` statements over `VerificationStatus` are unaffected, and `getSession` reports such a session as `PENDING`. Stores that implement `compareAndSet` must accept this status value.
+
+### Fixed
+
+- `VerificationType.AGE`: the PID has no age-over attributes. Age comes from a proof-of-age attestation (`age_over_NN`, mdoc namespace `eu.europa.ec.av.1`) or is derived from the PID birth date (`birthdate` in the SD-JWT VC `urn:eudi:pid:1`, `birth_date` in the mdoc namespace `eu.europa.ec.eudi.pid.1`). The README custom-mode example now derives `ageVerified` from `birthdate` and implements `buildWalletUrl`.
+- The default `walletUrl` (`<walletBaseUrl>?session=<id>`, default base `openid4vp://verify`) is documented as a placeholder, not an OpenID4VP Authorization Request; modes that talk to real wallets must implement `buildWalletUrl`. The `walletBaseUrl` JSDoc now states the real default (`openid4vp://verify`, not `openid4vp://`).
+- README: the `VERSION` comment no longer hard-codes a stale version, the eIDAS Pro link points to `https://eidas-pro.com`, and the custom-storage section shows `compareAndSet` for Redis.
+- A test now checks that the exported `VERSION` matches `package.json`.
+
 ## [0.8.0] — 2026-04-26
 
 ### Changed

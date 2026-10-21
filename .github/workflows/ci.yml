@@ -12,37 +12,52 @@ concurrency:
 
 jobs:
   typecheck:
-    name: Type Check
+    name: Type Check (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Node 20 reached end of life on 2026-04-30. 24 is the release runtime.
+        node: [22, 24]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node }}
           cache: "npm"
       - run: npm ci
       - run: npx tsc --noEmit
 
   test:
-    name: Test
+    name: Test (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Node 20 reached end of life on 2026-04-30. 24 is the release runtime.
+        node: [22, 24]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node }}
           cache: "npm"
       - run: npm ci
       - run: npm test
 
   build:
-    name: Build
+    name: Build (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Node 20 reached end of life on 2026-04-30. 24 is the release runtime.
+        node: [22, 24]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node }}
           cache: "npm"
       - run: npm ci
       - run: npm run build

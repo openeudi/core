@@ -22,7 +22,9 @@ export class SessionExpiredError extends Error {
 
 /**
  * Thrown when an operation requires a session to be in PENDING status
- * but it is in a different status (e.g., cancelling an already-completed session).
+ * but it is in a different status (e.g., cancelling an already-completed session,
+ * or a wallet callback for a session that is already completed or whose
+ * callback is being processed; `currentStatus` is then `PROCESSING`).
  */
 export class SessionNotPendingError extends Error {
     /** The session ID that was not in PENDING status */

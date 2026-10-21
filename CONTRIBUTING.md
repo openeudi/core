@@ -23,9 +23,9 @@ The package is a framework-agnostic EUDI Wallet verification session engine:
   - `mode.interface.ts` - Strategy interface with processCallback, simulateCompletion, buildWalletUrl
 - **`src/storage/`** - Session storage (ISessionStore interface):
   - `memory.store.ts` - In-memory Map-based store (default)
-  - `store.interface.ts` - Interface for custom backends (Redis, PostgreSQL, etc.)
+  - `store.interface.ts` - Interface for custom backends (Redis, PostgreSQL, etc.); optional `compareAndSet` and `listExpired` for stores shared by several processes
 - **`src/types/`** - TypeScript interfaces and enums (VerificationSession, VerificationResult, VerificationType, VerificationStatus)
-- **`src/errors.ts`** - SessionNotFoundError, SessionExpiredError
+- **`src/errors.ts`** - SessionNotFoundError, SessionExpiredError, SessionNotPendingError, ServiceDestroyedError
 - **`src/qr.ts`** - Optional QR code generation (peer dependency on qrcode)
 
 ## Development Workflow

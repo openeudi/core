@@ -41,7 +41,11 @@ export interface BaseSession {
     id: string;
     /** Type of verification requested */
     type: VerificationType;
-    /** URL for the wallet to initiate the OpenID4VP flow */
+    /**
+     * URL for the wallet to initiate the OpenID4VP flow, as built by the mode's
+     * `buildWalletUrl`. If the mode has none, this is the placeholder
+     * `<walletBaseUrl>?session=<id>`, which is not a valid OpenID4VP request.
+     */
     walletUrl: string;
     /** Allowed countries (ISO 3166-1 alpha-2) */
     countryWhitelist?: string[];

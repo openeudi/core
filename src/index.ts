@@ -24,7 +24,13 @@ export {
 } from './errors.js';
 
 // Storage
-export type { ISessionStore } from './storage/store.interface.js';
+export type {
+    ISessionStore,
+    ProcessingSession,
+    StoredSession,
+    StoredSessionStatus,
+} from './storage/store.interface.js';
+export { PROCESSING_STATUS } from './storage/store.interface.js';
 export { InMemorySessionStore } from './storage/memory.store.js';
 
 // Modes

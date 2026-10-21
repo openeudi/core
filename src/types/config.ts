@@ -11,6 +11,14 @@ export interface VerificationServiceConfig {
     store?: ISessionStore;
     /** Session time-to-live in milliseconds (default: 300_000 = 5 minutes) */
     sessionTtlMs?: number;
-    /** Base URL for wallet deep links (default: 'openid4vp://') */
+    /**
+     * Base URL for the default wallet link (default: `'openid4vp://verify'`).
+     *
+     * Used only when the mode does not implement `buildWalletUrl`; the session
+     * then gets `<walletBaseUrl>?session=<id>`. That link is a placeholder for
+     * demos and tests, not an OpenID4VP Authorization Request (it carries no
+     * `client_id`, `request_uri` or `dcql_query`), so a real wallet cannot act
+     * on it. Modes that talk to real wallets must implement `buildWalletUrl`.
+     */
     walletBaseUrl?: string;
 }

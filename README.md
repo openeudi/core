@@ -33,7 +33,7 @@ service.on("error", (err, sessionId) => {
 });
 
 const session = await service.createSession({ type: VerificationType.BOTH });
-console.log(session.walletUrl); // openid4vp://verify?session=<uuid>
+console.log(session.walletUrl); // openid4vp://verify?session=<uuid> (placeholder, see below)
 
 // Teardown when done
 service.destroy();
@@ -86,28 +86,64 @@ Implement `IVerificationMode` to connect to a real EUDI Wallet relying party:
 import type {
     IVerificationMode,
     BaseSession,
+    CreateSessionInput,
     VerificationResult,
 } from "@openeudi/core";
 
+/** Whole years between an ISO `YYYY-MM-DD` birth date and today (UTC). */
+function ageInYears(birthdate: string, today = new Date()): number {
+    const [year, month, day] = birthdate.split("-").map(Number);
+    const beforeBirthday =
+        today.getUTCMonth() + 1 < month ||
+        (today.getUTCMonth() + 1 === month && today.getUTCDate() < day);
+    return today.getUTCFullYear() - year - (beforeBirthday ? 1 : 0);
+}
+
 class ProductionMode implements IVerificationMode {
     readonly name = "production";
+
+    async buildWalletUrl(sessionId: string, input: CreateSessionInput): Promise<string> {
+        return buildAuthorizationRequest(sessionId, input); // your OpenID4VP request (client_id, request_uri, ...)
+    }
 
     async processCallback(
         session: BaseSession,
         walletResponse: unknown,
     ): Promise<VerificationResult> {
-        const claims = await verifyVPToken(walletResponse); // your OpenID4VP logic
-        return { verified: true, country: claims.country, ageVerified: claims.age >= 18 };
+        // Your OpenID4VP logic. Here: a PID as SD-JWT VC (vct "urn:eudi:pid:1").
+        const claims = await verifyVPToken(walletResponse);
+        // The PID has no age_over_18 attribute: derive the age from `birthdate`
+        // (`birth_date` in the mdoc PID, namespace eu.europa.ec.eudi.pid.1), or
+        // request a proof-of-age attestation (mdoc eu.europa.ec.av.1, age_over_NN).
+        const ageVerified = ageInYears(claims.birthdate) >= 18;
+        return { verified: ageVerified, country: claims.address?.country, ageVerified };
     }
 }
 ```
+
+A mode that talks to real wallets must implement `buildWalletUrl`. Without it the
+service falls back to `<walletBaseUrl>?session=<id>` (`openid4vp://verify?session=<id>`
+by default). That link is a placeholder for demos and tests: it carries no `client_id`,
+`request_uri` or `dcql_query`, so it is not an OpenID4VP Authorization Request.
 
 ## Custom Storage
 
 The default `InMemorySessionStore` works for single-process deployments. Implement `ISessionStore` for Redis, PostgreSQL, etc:
 
 ```ts
-import type { ISessionStore, VerificationSession } from "@openeudi/core";
+import type {
+    ISessionStore,
+    StoredSession,
+    StoredSessionStatus,
+    VerificationSession,
+} from "@openeudi/core";
+
+// Replace the session only if its current status matches, in one atomic step.
+const COMPARE_AND_SET = `
+local current = redis.call('GET', KEYS[1])
+if not current or cjson.decode(current).status ~= ARGV[1] then return 0 end
+redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
+return 1`;
 
 class RedisSessionStore implements ISessionStore {
     constructor(private redis: Redis) {}
@@ -123,6 +159,18 @@ class RedisSessionStore implements ISessionStore {
     async delete(id: string): Promise<void> {
         await this.redis.del(`session:${id}`);
     }
+    // Optional. Needed when several processes share the store.
+    async compareAndSet(
+        id: string,
+        expectedStatus: StoredSessionStatus,
+        next: StoredSession,
+    ): Promise<boolean> {
+        const ttl = Math.max(1, next.expiresAt.getTime() - Date.now());
+        const replaced = await this.redis.eval(
+            COMPARE_AND_SET, 1, `session:${id}`, expectedStatus, JSON.stringify(next), ttl,
+        );
+        return replaced === 1;
+    }
 }
 
 const service = new VerificationService({
@@ -130,6 +178,20 @@ const service = new VerificationService({
     store: new RedisSessionStore(new Redis()),
 });
 ```
+
+A session accepts exactly one wallet callback: `handleCallback` claims the session
+before the mode processes the response, and every other callback for it gets
+`SessionNotPendingError`. Two optional store methods matter when several processes
+share a store:
+
+- `compareAndSet(id, expectedStatus, next)` makes that claim atomic across all of
+  them. Without it, the one-callback guarantee holds only inside one process. While
+  a callback is processed, the stored status is `PROCESSING` (exported as
+  `PROCESSING_STATUS`); your schema must accept it. `getSession` still reports such a
+  session as `PENDING`.
+- `listExpired(now)` returns the IDs of `PENDING` sessions past `expiresAt`. Without
+  it, `cleanupExpired()` only sees sessions created by the same instance since it
+  started.
 
 ## Discriminated Union Types
 
@@ -269,7 +331,7 @@ const dataUri = await generateQRCode(session.walletUrl);
 | `constructor(config)` | `VerificationService` | Create service with mode, optional store, TTL, and wallet URL |
 | `createSession(input)` | `Promise<PendingSession>` | Create a new verification session |
 | `getSession(id)` | `Promise<VerificationSession>` | Retrieve session by ID (throws `SessionNotFoundError`) |
-| `handleCallback(sessionId, walletResponse)` | `Promise<VerificationResult>` | Process wallet callback (throws `SessionNotFoundError`, `SessionExpiredError`) |
+| `handleCallback(sessionId, walletResponse)` | `Promise<VerificationResult>` | Process the wallet callback; accepted once per session (throws `SessionNotFoundError`, `SessionNotPendingError`, `SessionExpiredError`) |
 | `cancelSession(id)` | `Promise<void>` | Cancel a pending session (throws `SessionNotPendingError` if not pending) |
 | `cleanupExpired()` | `Promise<number>` | Remove expired sessions, returns count cleaned |
 | `destroy()` | `void` | Permanently destroy the service and prevent further use |
@@ -281,7 +343,7 @@ interface VerificationServiceConfig {
     mode: IVerificationMode; // Required -- DemoMode, MockMode, or custom
     store?: ISessionStore;   // Default: InMemorySessionStore
     sessionTtlMs?: number;   // Default: 300_000 (5 minutes)
-    walletBaseUrl?: string;  // Default: 'openid4vp://verify'
+    walletBaseUrl?: string;  // Default: 'openid4vp://verify' (placeholder link, used only without buildWalletUrl)
 }
 ```
 
@@ -291,7 +353,7 @@ interface VerificationServiceConfig {
 | --- | --- | --- |
 | `SessionNotFoundError` | `getSession`, `handleCallback`, `cancelSession` | No session with the given ID |
 | `SessionExpiredError` | `handleCallback` | Session TTL has elapsed |
-| `SessionNotPendingError` | `cancelSession` | Session is not in PENDING status |
+| `SessionNotPendingError` | `handleCallback`, `cancelSession` | Session is not in PENDING status (already completed, or a callback is being processed) |
 | `ServiceDestroyedError` | All public methods | Service has been destroyed |
 
 ## Types
@@ -311,6 +373,9 @@ import type {
     VerificationEvents,     // Event map for typed EventEmitter
     IVerificationMode,      // Strategy interface for modes
     ISessionStore,          // Storage adapter interface
+    StoredSession,          // What a store holds: VerificationSession | ProcessingSession
+    StoredSessionStatus,    // VerificationStatus values plus 'PROCESSING'
+    ProcessingSession,      // Stored while a callback is processed (compareAndSet stores only)
     DemoModeConfig,         // DemoMode constructor options
     MockModeConfig,         // MockMode constructor options
 } from "@openeudi/core";
@@ -323,7 +388,8 @@ import {
     SessionNotPendingError,
     ServiceDestroyedError,
     isValidCountryCode,
-    VERSION,                // '0.2.0'
+    PROCESSING_STATUS,      // 'PROCESSING' (storage-only marker)
+    VERSION,                // Package version string, same as package.json
 } from "@openeudi/core";
 ```
 
@@ -380,7 +446,7 @@ service.on("error", (err, sessionId) => {
 
 ## Related
 
-[eIDAS Pro](https://eidas-pro.eu) -- managed verification service with WooCommerce/Shopify plugins, admin dashboard, and compliance tools built on `@openeudi/core`.
+[eIDAS Pro](https://eidas-pro.com) -- managed verification service with WooCommerce/Shopify plugins, admin dashboard, and compliance tools built on `@openeudi/core`.
 
 ## Community integrations
 

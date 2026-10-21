@@ -31,7 +31,9 @@ export interface IVerificationMode {
     /**
      * Optional: build a custom wallet URL for the session.
      * Used by ProductionMode to generate proper OpenID4VP authorization requests.
-     * If not implemented, the service uses a default URL format.
+     * If not implemented, the service uses the placeholder
+     * `<walletBaseUrl>?session=<id>`, which is not an OpenID4VP request. Any
+     * mode that talks to real wallets must implement this.
      *
      * @param sessionId - The session ID
      * @param input - The session creation input

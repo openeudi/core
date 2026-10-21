@@ -10,7 +10,8 @@ import {
 } from './errors.js';
 import type { IVerificationMode } from './modes/mode.interface.js';
 import { InMemorySessionStore } from './storage/memory.store.js';
-import type { ISessionStore } from './storage/store.interface.js';
+import { PROCESSING_STATUS } from './storage/store.interface.js';
+import type { ISessionStore, ProcessingSession } from './storage/store.interface.js';
 import type { VerificationServiceConfig } from './types/config.js';
 import type { VerificationEvents } from './types/events.js';
 import type {
@@ -25,7 +26,19 @@ import { VerificationStatus } from './types/verification.js';
 import { validateConfig, validateSessionInput } from './validation.js';
 
 const DEFAULT_TTL_MS = 300_000; // 5 minutes
+// Placeholder used when the mode has no buildWalletUrl. It is not an OpenID4VP
+// Authorization Request (no client_id, request_uri or dcql_query); real modes
+// must build their own URL.
 const DEFAULT_WALLET_BASE_URL = 'openid4vp://verify';
+
+/** Errors meaning the session no longer waits for a wallet, so a late completion has nothing to do. */
+function isSessionNoLongerPending(error: unknown): boolean {
+    return (
+        error instanceof SessionNotPendingError ||
+        error instanceof SessionNotFoundError ||
+        error instanceof SessionExpiredError
+    );
+}
 
 /**
  * EUDI Wallet verification session orchestrator.
@@ -56,6 +69,12 @@ export class VerificationService extends EventEmitter {
     private walletBaseUrl: string;
     /** Track session IDs for cleanup (store interface has no list method) */
     private sessionIds = new Set<string>();
+    /**
+     * Session IDs this instance is completing or cancelling right now.
+     * Guarantees one callback per session within the process, even when the
+     * store has no compareAndSet.
+     */
+    private inFlight = new Set<string>();
     /** Whether {@link destroy} has been called */
     private destroyed = false;
 
@@ -203,14 +222,15 @@ export class VerificationService extends EventEmitter {
         if (this.mode.simulateCompletion) {
             this.mode
                 .simulateCompletion(session)
-                .then(async (result) => {
-                    // Only auto-complete if session is still pending
-                    const current = await this.store.get(id);
-                    if (current && current.status === VerificationStatus.PENDING) {
-                        await this.completeSession(current, result);
-                    }
-                })
+                // Same claim as handleCallback, so a simulated completion and a
+                // real callback can never both complete the session.
+                .then((result) => this.completeExclusively(id, async () => result))
                 .catch((error: unknown) => {
+                    // A session that was already completed, cancelled or expired
+                    // is the expected outcome of a race with handleCallback.
+                    if (isSessionNoLongerPending(error)) {
+                        return;
+                    }
                     // Emit error event instead of silently swallowing
                     this.emit('error', error instanceof Error ? error : new Error(String(error)), id);
                 });
@@ -241,6 +261,11 @@ export class VerificationService extends EventEmitter {
         if (!session) {
             throw new SessionNotFoundError(id);
         }
+        // A callback is in progress. To callers the session still waits for
+        // its outcome, exactly as before the processing marker existed.
+        if (session.status === PROCESSING_STATUS) {
+            return { ...session, status: VerificationStatus.PENDING };
+        }
         return session;
     }
 
@@ -250,11 +275,24 @@ export class VerificationService extends EventEmitter {
      * Delegates to the mode's `processCallback` to evaluate the wallet response,
      * then transitions the session to VERIFIED or REJECTED.
      *
+     * A session accepts one callback. Only a PENDING session is processed; a
+     * second callback, or one that arrives while another is being processed,
+     * is refused with {@link SessionNotPendingError} and emits nothing.
+     *
+     * The session is claimed before `processCallback` runs. If the store
+     * implements {@link ISessionStore.compareAndSet}, the claim and the final
+     * state change are atomic across every process sharing the store. Without
+     * it, the guarantee holds only within this process.
+     *
+     * If `processCallback` throws, the claim is released, the session stays
+     * PENDING and the error is rethrown.
+     *
      * @param sessionId - The session UUID the callback belongs to
      * @param walletResponse - Raw credential data from the wallet
      * @returns The verification result
      * @throws {ServiceDestroyedError} If the service has been destroyed
      * @throws {SessionNotFoundError} If no session exists with the given ID
+     * @throws {SessionNotPendingError} If the session is already completed, or another callback is being processed
      * @throws {SessionExpiredError} If the session has passed its TTL
      * @emits session:verified When verification succeeds
      * @emits session:rejected When verification fails
@@ -269,24 +307,15 @@ export class VerificationService extends EventEmitter {
      */
     async handleCallback(sessionId: string, walletResponse: unknown): Promise<VerificationResult> {
         this.assertNotDestroyed();
-        const session = await this.store.get(sessionId);
-        if (!session) {
-            throw new SessionNotFoundError(sessionId);
-        }
-        if (new Date() > session.expiresAt) {
-            throw new SessionExpiredError(sessionId);
-        }
-
-        const result = await this.mode.processCallback(session, walletResponse);
-        await this.completeSession(session, result);
-        return result;
+        return this.completeExclusively(sessionId, (session) => this.mode.processCallback(session, walletResponse));
     }
 
     /**
      * Cancel a pending verification session.
      *
      * Only sessions in PENDING status can be cancelled. Completed or expired
-     * sessions will cause a {@link SessionNotPendingError}.
+     * sessions, and sessions whose callback is being processed, will cause a
+     * {@link SessionNotPendingError}.
      *
      * @param id - The session UUID to cancel
      * @throws {ServiceDestroyedError} If the service has been destroyed
@@ -302,17 +331,22 @@ export class VerificationService extends EventEmitter {
      */
     async cancelSession(id: string): Promise<void> {
         this.assertNotDestroyed();
-        const session = await this.store.get(id);
-        if (!session) {
-            throw new SessionNotFoundError(id);
-        }
-        if (session.status !== VerificationStatus.PENDING) {
-            throw new SessionNotPendingError(id, session.status);
-        }
+        this.acquireInFlight(id);
+        try {
+            const session = await this.store.get(id);
+            if (!session) {
+                throw new SessionNotFoundError(id);
+            }
+            if (session.status !== VerificationStatus.PENDING) {
+                throw new SessionNotPendingError(id, session.status);
+            }
 
-        await this.store.delete(id);
-        this.sessionIds.delete(id);
-        this.emit('session:cancelled', session);
+            await this.store.delete(id);
+            this.sessionIds.delete(id);
+            this.emit('session:cancelled', session);
+        } finally {
+            this.inFlight.delete(id);
+        }
     }
 
     /**
@@ -320,6 +354,13 @@ export class VerificationService extends EventEmitter {
      *
      * Iterates all tracked session IDs and transitions any pending session
      * whose TTL has elapsed to EXPIRED status before deleting it.
+     *
+     * Tracked IDs are the sessions this instance created since it started. If
+     * the store implements {@link ISessionStore.listExpired}, the IDs it returns
+     * are swept too, which covers sessions created by other instances or before
+     * a restart. If the store implements {@link ISessionStore.compareAndSet},
+     * the PENDING to EXPIRED change is atomic, so a session is never expired
+     * while another process completes it.
      *
      * @returns Number of sessions that were expired and removed
      * @throws {ServiceDestroyedError} If the service has been destroyed
@@ -337,7 +378,18 @@ export class VerificationService extends EventEmitter {
         const now = new Date();
         let count = 0;
 
-        for (const id of this.sessionIds) {
+        const candidateIds = new Set(this.sessionIds);
+        if (this.store.listExpired) {
+            for (const id of await this.store.listExpired(now)) {
+                candidateIds.add(id);
+            }
+        }
+
+        for (const id of candidateIds) {
+            // A callback started before the TTL elapsed is allowed to finish.
+            if (this.inFlight.has(id)) {
+                continue;
+            }
             const session = await this.store.get(id);
             if (!session) {
                 this.sessionIds.delete(id);
@@ -349,7 +401,14 @@ export class VerificationService extends EventEmitter {
                     status: VerificationStatus.EXPIRED,
                     completedAt: now,
                 };
-                await this.store.set(expired);
+                if (this.store.compareAndSet) {
+                    // Another process claimed or settled it after our read.
+                    if (!(await this.store.compareAndSet(id, VerificationStatus.PENDING, expired))) {
+                        continue;
+                    }
+                } else {
+                    await this.store.set(expired);
+                }
                 await this.store.delete(id);
                 this.sessionIds.delete(id);
                 this.emit('session:expired', expired);
@@ -395,9 +454,108 @@ export class VerificationService extends EventEmitter {
     }
 
     /**
-     * Transition a session to VERIFIED or REJECTED and emit the appropriate event.
+     * Mark a session as busy in this process.
+     *
+     * @throws {SessionNotPendingError} If this process is already completing or cancelling it
      */
-    private async completeSession(session: VerificationSession, result: VerificationResult): Promise<void> {
+    private acquireInFlight(id: string): void {
+        if (this.inFlight.has(id)) {
+            throw new SessionNotPendingError(id, PROCESSING_STATUS);
+        }
+        this.inFlight.add(id);
+    }
+
+    /**
+     * Build the error for a session that turned out not to be claimable:
+     * SessionNotFoundError if it is gone, SessionNotPendingError otherwise.
+     */
+    private async notPendingError(id: string): Promise<Error> {
+        const current = await this.store.get(id);
+        return current ? new SessionNotPendingError(id, current.status) : new SessionNotFoundError(id);
+    }
+
+    /**
+     * Claim a PENDING session, compute its result with `produce`, and settle it.
+     * At most one caller completes a given session; all others get
+     * {@link SessionNotPendingError} (or {@link SessionNotFoundError} if it was
+     * removed meanwhile) and nothing is emitted for them.
+     */
+    private async completeExclusively(
+        id: string,
+        produce: (session: PendingSession) => Promise<VerificationResult>,
+    ): Promise<VerificationResult> {
+        // Lock first, read second: a read made after taking the lock sees every
+        // write of the previous lock holder, so the status check cannot be stale.
+        this.acquireInFlight(id);
+        try {
+            const session = await this.claim(id);
+
+            let result: VerificationResult;
+            try {
+                result = await produce(session);
+            } catch (error) {
+                await this.releaseClaim(session);
+                throw error;
+            }
+
+            await this.completeSession(session, result);
+            return result;
+        } finally {
+            this.inFlight.delete(id);
+        }
+    }
+
+    /**
+     * Check that a session can take a callback and, if the store supports it,
+     * mark it PROCESSING atomically. The caller must hold the in-flight lock.
+     */
+    private async claim(id: string): Promise<PendingSession> {
+        const session = await this.store.get(id);
+        if (!session) {
+            throw new SessionNotFoundError(id);
+        }
+        if (session.status !== VerificationStatus.PENDING) {
+            throw new SessionNotPendingError(id, session.status);
+        }
+        if (new Date() > session.expiresAt) {
+            throw new SessionExpiredError(id);
+        }
+
+        if (this.store.compareAndSet) {
+            const processing: ProcessingSession = { ...session, status: PROCESSING_STATUS };
+            if (!(await this.store.compareAndSet(id, VerificationStatus.PENDING, processing))) {
+                throw await this.notPendingError(id);
+            }
+        }
+        return session;
+    }
+
+    /**
+     * Put a claimed session back to PENDING after `produce` failed, so the
+     * wallet can retry. A failure here is reported on the `error` event (when
+     * someone listens) so that the caller still receives the original error.
+     */
+    private async releaseClaim(session: PendingSession): Promise<void> {
+        if (!this.store.compareAndSet) {
+            return;
+        }
+        try {
+            await this.store.compareAndSet(session.id, PROCESSING_STATUS, session);
+        } catch (releaseError: unknown) {
+            if (this.listenerCount('error') > 0) {
+                this.emit(
+                    'error',
+                    releaseError instanceof Error ? releaseError : new Error(String(releaseError)),
+                    session.id,
+                );
+            }
+        }
+    }
+
+    /**
+     * Transition a claimed session to VERIFIED or REJECTED and emit the appropriate event.
+     */
+    private async completeSession(session: PendingSession, result: VerificationResult): Promise<void> {
         const status = result.verified ? VerificationStatus.VERIFIED : VerificationStatus.REJECTED;
         const updated: CompletedSession = {
             ...session,
@@ -406,7 +564,16 @@ export class VerificationService extends EventEmitter {
             result,
         };
 
-        await this.store.set(updated);
+        if (this.store.compareAndSet) {
+            // Fails only if something else changed or removed the session while
+            // it was being processed (another instance cancelling it after its
+            // read, or a store-side TTL). Nothing is emitted in that case.
+            if (!(await this.store.compareAndSet(session.id, PROCESSING_STATUS, updated))) {
+                throw await this.notPendingError(session.id);
+            }
+        } else {
+            await this.store.set(updated);
+        }
         this.sessionIds.delete(session.id);
 
         if (result.verified) {
