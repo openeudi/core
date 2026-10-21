@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-10-21
+
 ### Security
 
 - `handleCallback` now processes a session only while it is `PENDING`
